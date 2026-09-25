@@ -166,6 +166,13 @@ resource basketServiceContainer 'Radius.Compute/containers@2025-08-01-preview' =
     containers: {
       basketservice: {
         image: basketServiceImage.properties.imageReference
+        command: [
+          '/bin/sh'
+          '-c'
+        ]
+        args: [
+          'URL="$ConnectionStrings__basketcache"; REST="\${URL#*://}"; CREDENTIALS="\${REST%%@*}"; HOSTPORT="\${REST#*@}"; PASSWORD="\${CREDENTIALS#:}"; export ConnectionStrings__basketcache="\${HOSTPORT},password=\${PASSWORD},ssl=True,abortConnect=False"; exec dotnet AspireShop.BasketService.dll'
+        ]
         env: {
           ConnectionStrings__basketcache: {
             valueFrom: {
@@ -210,13 +217,6 @@ resource catalogDbManagerContainer 'Radius.Compute/containers@2025-08-01-preview
             containerPort: 8080
           }
         }
-        readinessProbe: {
-          httpGet: {
-            path: '/health'
-            port: 8080
-            scheme: 'http'
-          }
-        }
       }
     }
   }
@@ -244,13 +244,6 @@ resource catalogServiceContainer 'Radius.Compute/containers@2025-08-01-preview' 
         ports: {
           web: {
             containerPort: 8080
-          }
-        }
-        readinessProbe: {
-          httpGet: {
-            path: '/health'
-            port: 8080
-            scheme: 'http'
           }
         }
       }
@@ -281,13 +274,6 @@ resource frontendContainer 'Radius.Compute/containers@2025-08-01-preview' = {
         ports: {
           web: {
             containerPort: 8080
-          }
-        }
-        readinessProbe: {
-          httpGet: {
-            path: '/health'
-            port: 8080
-            scheme: 'http'
           }
         }
       }
