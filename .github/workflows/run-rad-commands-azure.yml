@@ -107,6 +107,7 @@ jobs:
       - name: Connect to AKS cluster
         if: ${{ vars.AZURE_AKS_CLUSTER_NAME != '' }}
         run: |
+          az aks install-cli
           az aks get-credentials \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --name "${{ vars.AZURE_AKS_CLUSTER_NAME }}" \
