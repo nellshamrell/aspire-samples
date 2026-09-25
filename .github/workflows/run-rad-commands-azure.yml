@@ -81,12 +81,6 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set up kubelogin
-        if: ${{ vars.AZURE_AKS_CLUSTER_NAME != '' }}
-        uses: azure/use-kubelogin@0ce7c36141aa27d4934872cf00b0120804c98a29 # v1.3
-        with:
-          kubelogin-version: 'v0.2.19'
-
       - name: Log in to GHCR for the state archive
         # The OCI-backed Radius state archive authenticates to GHCR using the
         # runner's Docker credential store (~/.docker/config.json). rad startup
@@ -118,26 +112,6 @@ jobs:
             --name "${{ vars.AZURE_AKS_CLUSTER_NAME }}" \
             --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
             --file "$RADIUS_TARGET_KUBECONFIG"
-
-          # Radius mounts this kubeconfig into its control-plane pods, where the
-          # runner-installed kubelogin executable is unavailable. Resolve the
-          # Azure CLI credential now and store only its short-lived bearer token.
-          AKS_TOKEN=$(kubelogin get-token \
-            --login azurecli \
-            --legacy \
-            --server-id 6dae42f8-4368-4678-94ff-3960e28e3630 |
-            jq -r '.status.token')
-          if [ -z "$AKS_TOKEN" ] || [ "$AKS_TOKEN" = "null" ]; then
-            echo "kubelogin did not return an AKS bearer token." >&2
-            exit 1
-          fi
-          kubectl config view --raw \
-            --kubeconfig "$RADIUS_TARGET_KUBECONFIG" \
-            --output json |
-            jq --arg token "$AKS_TOKEN" '.users |= map(.user = {token: $token})' \
-              > "$RADIUS_TARGET_KUBECONFIG.tmp"
-          mv "$RADIUS_TARGET_KUBECONFIG.tmp" "$RADIUS_TARGET_KUBECONFIG"
-          kubectl --kubeconfig "$RADIUS_TARGET_KUBECONFIG" get namespace
 
       - name: Set up control plane
         uses: radius-project/ai-extensions/.github/extension/actions/setup-control-plane@f89e730f441063ff26adbd9006296fc111134da7
