@@ -374,7 +374,7 @@ jobs:
           app-image: ${{ env.APP_IMAGE }}
           namespace: ${{ vars.KUBERNETES_NAMESPACE || 'default' }}
           rad-commands: ${{ inputs.rad_commands || vars.RADIUS_RAD_COMMANDS }}
-          deploy-params: ${{ secrets.RADIUS_DEPLOY_PARAMS }}
+          deploy-params: ''
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
           build-arch-mode: ${{ env.TARGET_CLUSTER_ARCH_MODE }}
