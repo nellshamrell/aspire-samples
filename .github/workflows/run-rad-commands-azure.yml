@@ -125,8 +125,8 @@ jobs:
           AKS_TOKEN=$(kubelogin get-token \
             --login azurecli \
             --legacy \
-            --server-id 6dae42f8-4368-4678-94ff-3960e28e3630 \
-            --output json | jq -r '.status.token')
+            --server-id 6dae42f8-4368-4678-94ff-3960e28e3630 |
+            jq -r '.status.token')
           if [ -z "$AKS_TOKEN" ] || [ "$AKS_TOKEN" = "null" ]; then
             echo "kubelogin did not return an AKS bearer token." >&2
             exit 1
