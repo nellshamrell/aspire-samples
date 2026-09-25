@@ -81,12 +81,6 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set up kubelogin
-        if: ${{ vars.AZURE_AKS_CLUSTER_NAME != '' }}
-        uses: azure/use-kubelogin@0ce7c36141aa27d4934872cf00b0120804c98a29 # v1.3
-        with:
-          kubelogin-version: 'v0.2.19'
-
       - name: Log in to GHCR for the state archive
         # The OCI-backed Radius state archive authenticates to GHCR using the
         # runner's Docker credential store (~/.docker/config.json). rad startup
@@ -118,9 +112,6 @@ jobs:
             --name "${{ vars.AZURE_AKS_CLUSTER_NAME }}" \
             --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
             --file "$RADIUS_TARGET_KUBECONFIG"
-          kubelogin convert-kubeconfig \
-            --kubeconfig "$RADIUS_TARGET_KUBECONFIG" \
-            --login azurecli
 
       - name: Set up control plane
         uses: radius-project/ai-extensions/.github/extension/actions/setup-control-plane@f89e730f441063ff26adbd9006296fc111134da7
