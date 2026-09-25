@@ -118,9 +118,20 @@ jobs:
             --name "${{ vars.AZURE_AKS_CLUSTER_NAME }}" \
             --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
             --file "$RADIUS_TARGET_KUBECONFIG"
-          kubelogin convert-kubeconfig \
+
+          # Radius mounts this kubeconfig into its control-plane pods, where the
+          # runner-installed kubelogin executable is unavailable. Resolve the
+          # Azure CLI credential now and store only its short-lived bearer token.
+          AKS_TOKEN=$(kubelogin get-token \
+            --login azurecli \
+            --server-id 6dae42f8-4368-4678-94ff-3960e28e3630 \
+            --output json | jq -r '.status.token')
+          kubectl config view --raw \
             --kubeconfig "$RADIUS_TARGET_KUBECONFIG" \
-            --login azurecli
+            --output json |
+            jq --arg token "$AKS_TOKEN" '.users |= map(.user = {token: $token})' \
+              > "$RADIUS_TARGET_KUBECONFIG.tmp"
+          mv "$RADIUS_TARGET_KUBECONFIG.tmp" "$RADIUS_TARGET_KUBECONFIG"
 
       - name: Set up control plane
         uses: radius-project/ai-extensions/.github/extension/actions/setup-control-plane@f89e730f441063ff26adbd9006296fc111134da7
