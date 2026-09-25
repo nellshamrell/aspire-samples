@@ -108,7 +108,6 @@ jobs:
         if: ${{ vars.AZURE_AKS_CLUSTER_NAME != '' }}
         run: |
           az aks get-credentials \
-            --admin \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --name "${{ vars.AZURE_AKS_CLUSTER_NAME }}" \
             --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
@@ -374,7 +373,7 @@ jobs:
           app-image: ${{ env.APP_IMAGE }}
           namespace: ${{ vars.KUBERNETES_NAMESPACE || 'default' }}
           rad-commands: ${{ inputs.rad_commands || vars.RADIUS_RAD_COMMANDS }}
-          deploy-params: ''
+          deploy-params: ${{ secrets.RADIUS_DEPLOY_PARAMS }}
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
           build-arch-mode: ${{ env.TARGET_CLUSTER_ARCH_MODE }}
