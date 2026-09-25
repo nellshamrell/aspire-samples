@@ -124,14 +124,20 @@ jobs:
           # Azure CLI credential now and store only its short-lived bearer token.
           AKS_TOKEN=$(kubelogin get-token \
             --login azurecli \
+            --legacy \
             --server-id 6dae42f8-4368-4678-94ff-3960e28e3630 \
             --output json | jq -r '.status.token')
+          if [ -z "$AKS_TOKEN" ] || [ "$AKS_TOKEN" = "null" ]; then
+            echo "kubelogin did not return an AKS bearer token." >&2
+            exit 1
+          fi
           kubectl config view --raw \
             --kubeconfig "$RADIUS_TARGET_KUBECONFIG" \
             --output json |
             jq --arg token "$AKS_TOKEN" '.users |= map(.user = {token: $token})' \
               > "$RADIUS_TARGET_KUBECONFIG.tmp"
           mv "$RADIUS_TARGET_KUBECONFIG.tmp" "$RADIUS_TARGET_KUBECONFIG"
+          kubectl --kubeconfig "$RADIUS_TARGET_KUBECONFIG" get namespace
 
       - name: Set up control plane
         uses: radius-project/ai-extensions/.github/extension/actions/setup-control-plane@f89e730f441063ff26adbd9006296fc111134da7
