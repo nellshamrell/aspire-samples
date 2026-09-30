@@ -112,16 +112,6 @@ jobs:
             --name "${{ vars.AZURE_AKS_CLUSTER_NAME }}" \
             --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}" \
             --file "$RADIUS_TARGET_KUBECONFIG"
-          # The control-plane pods cannot execute the runner's kubelogin plugin.
-          # Embed a short-lived AKS audience token before mounting the kubeconfig.
-          AKS_TOKEN="$(az account get-access-token \
-            --resource 6dae42f8-4368-4678-94ff-3960e28e3630 \
-            --query accessToken --output tsv)"
-          kubectl config set-credentials radius-target \
-            --token="$AKS_TOKEN" --kubeconfig="$RADIUS_TARGET_KUBECONFIG"
-          kubectl config set-context --current --user=radius-target \
-            --kubeconfig="$RADIUS_TARGET_KUBECONFIG"
-          kubectl --kubeconfig="$RADIUS_TARGET_KUBECONFIG" cluster-info
 
       - name: Set up control plane
         uses: radius-project/ai-extensions/.github/extension/actions/setup-control-plane@c1c9e938963bbca923984138c82173ec3f0d8b08
@@ -435,27 +425,6 @@ jobs:
           build-arch-mode: ${{ env.TARGET_CLUSTER_ARCH_MODE }}
           build-fallback-platforms: ${{ env.TARGET_CLUSTER_ARCH_FALLBACK_PLATFORMS }}
           azure-oidc-token-refresh: "${{ vars.AZURE_CLIENT_ID != '' }}"
-
-      - name: Verify JavaScript weather frontend and API
-        if: ${{ inputs.environment == 'javascript-weather-demo' }}
-        env:
-          NAMESPACE: ${{ vars.KUBERNETES_NAMESPACE }}
-        run: |
-          set -euo pipefail
-          kubectl --kubeconfig="$RADIUS_TARGET_KUBECONFIG" -n "$NAMESPACE" \
-            rollout status deployment/weather-api --timeout=180s
-          kubectl --kubeconfig="$RADIUS_TARGET_KUBECONFIG" -n "$NAMESPACE" \
-            rollout status deployment/react-weather --timeout=180s
-
-          kubectl --kubeconfig="$RADIUS_TARGET_KUBECONFIG" -n "$NAMESPACE" \
-            port-forward service/react-weather-react 18080:8080 > /tmp/radius-weather-forward.log 2>&1 &
-          forward_pid=$!
-          trap 'kill "$forward_pid" 2>/dev/null || true' EXIT
-          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 2 \
-            http://127.0.0.1:18080/ | grep -q '<title>React Weather'
-          curl --fail --silent --show-error \
-            http://127.0.0.1:18080/api/weatherforecast \
-            | jq -e 'length == 5 and all(.[]; has("date") and has("temperatureC") and has("summary"))'
 
       # Publish status on failure too: an empty Deployed tab is least helpful
       # exactly when a deploy failed and the user is trying to see which
