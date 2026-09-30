@@ -37,6 +37,18 @@ If using Visual Studio, open the solution file `AspireJavaScript.slnx` and launc
 
 If using the .NET CLI, run `dotnet run` from the `AspireShop.AppHost` directory.
 
+## Deploy the React weather demo with Radius Canvas
+
+This deployment uses the **weather API and React frontend** (not Angular, Vue, or Vite). The API runs in a .NET container; Nginx serves React and proxies `/api/` to the API over the cluster network. The model is at [`.radius/app.bicep`](../../.radius/app.bicep).
+
+1. Install the **Radius** plugin in the GitHub Copilot app's **Customize > Plugins** tab, then restart your session. Open this GitHub repository in a Copilot worktree.
+2. Ask Copilot: **"Show the application graph for the React weather demo."** In Radius Canvas, check for two container images, two containers, and a route to React. Commit and push `.radius/app.bicep`, `.radius/bicepconfig.json`, and the sample's Dockerfiles before deploying; Radius builds the images from the **commit SHA pinned in the model's `build.source` URLs**. If you change either image's source, commit it and update both URLs to the new source commit.
+3. In Canvas, select **Create Environment**. Connect an Azure credential profile with GitHub OIDC access to an AKS cluster, choose a dedicated namespace, and finish verification. The GitHub Environment must have a private repository-linked GHCR state package and `RADIUS_STATE_BACKEND=oci`, `RADIUS_STATE_REGISTRY=ghcr.io/<owner>/<private-state-package>` (no tag), and `RADIUS_STATE_ARCHIVE=radius-state`. The GitHub account used for setup needs `read:packages` and `write:packages`.
+4. Open **Planned**, select this branch and the verified Environment, and review the two workloads and the React route. Select **Deploy Application** and watch the GitHub Actions run through **Deployments**. A successful deploy shows both containers in **Deployed**; the page alone is not proof the API works.
+5. Ask Copilot **"Access my deployed application"** to port-forward the React service. Open it and confirm the five-day forecast loads; **Refresh** should request fresh data from `/api/weatherforecast`. When finished, use **Delete Deployment** in Canvas, then delete the Environment if it is no longer needed.
+
+See the [Radius Canvas guide](https://docs.radapp.io/integrations/github-copilot-app/canvas-extension/) for the plugin and Environment setup screens.
+
 ### Experiencing the app
 
 Once the app is running, the Aspire dashboard will launch in your browser:
