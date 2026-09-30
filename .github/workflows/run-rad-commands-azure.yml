@@ -436,6 +436,27 @@ jobs:
           build-fallback-platforms: ${{ env.TARGET_CLUSTER_ARCH_FALLBACK_PLATFORMS }}
           azure-oidc-token-refresh: "${{ vars.AZURE_CLIENT_ID != '' }}"
 
+      - name: Verify JavaScript weather frontend and API
+        if: ${{ inputs.environment == 'javascript-weather-demo' }}
+        env:
+          NAMESPACE: ${{ vars.KUBERNETES_NAMESPACE }}
+        run: |
+          set -euo pipefail
+          kubectl --kubeconfig="$RADIUS_TARGET_KUBECONFIG" -n "$NAMESPACE" \
+            rollout status deployment/weather-api --timeout=180s
+          kubectl --kubeconfig="$RADIUS_TARGET_KUBECONFIG" -n "$NAMESPACE" \
+            rollout status deployment/react-weather --timeout=180s
+
+          kubectl --kubeconfig="$RADIUS_TARGET_KUBECONFIG" -n "$NAMESPACE" \
+            port-forward service/react-weather-react 18080:8080 > /tmp/radius-weather-forward.log 2>&1 &
+          forward_pid=$!
+          trap 'kill "$forward_pid" 2>/dev/null || true' EXIT
+          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 2 \
+            http://127.0.0.1:18080/ | grep -q '<title>React Weather'
+          curl --fail --silent --show-error \
+            http://127.0.0.1:18080/api/weatherforecast \
+            | jq -e 'length == 5 and all(.[]; has("date") and has("temperatureC") and has("summary"))'
+
       # Publish status on failure too: an empty Deployed tab is least helpful
       # exactly when a deploy failed and the user is trying to see which
       # resource broke. `!cancelled()` covers success and failure but skips
